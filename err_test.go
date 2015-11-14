@@ -1,3 +1,6 @@
+/**
+ * err is a helper library for even cleaner error handling in Go
+ */
 package err
 
 import (
@@ -74,3 +77,5 @@ func TestTest(t *testing.T) {
 		t.Error("Exptected TestTest")
 	}
 }
+
+func TestStringer(
