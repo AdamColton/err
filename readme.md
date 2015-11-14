@@ -35,12 +35,15 @@ Warn uses err.Log. By default err.Log will be os.Stderr. Warn will write the err
 ```go
   if data,e := SomeFunc(); err.Warn(e){
     useData(data)
+  } else {
+    handleError(e)
   }
   // similar to (but better than!!!)
   if data,e := SomeFunc(); e == nil{
     useData(data)
   } else {
-    fmt.Println(e)
+    fmt.Println(e) //for debug only, remove before release
+    handleError(e)
   }
 ```
 
