@@ -1,6 +1,6 @@
-/**
- * err is a helper library for even cleaner error handling in g
- */
+/*
+err is a helper library for even cleaner error handling in Go
+*/
 package err
 
 import (
