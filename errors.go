@@ -28,21 +28,21 @@ func Panic(e error) {
 // If Log is nil and e is not nil, Warn will call panic(e).
 // If Log is not and e is not nil, Warn will write e to Log.
 func Warn(e error) bool {
-	if e != nil {
-		if Log != nil {
-			errStr := e.Error()
-			if errStr[len(errStr)-1:] != "\n" {
-				errStr += "\n"
-			}
-			if _, writeError := Log.WriteString(errStr); writeError != nil {
-				panic(writeError)
-			}
-		} else {
-			panic(e)
-		}
-		return false
+	if e == nil {
+		return true
 	}
-	return true
+	if Log != nil {
+		errStr := e.Error()
+		if errStr[len(errStr)-1:] != "\n" {
+			errStr += "\n"
+		}
+		if _, writeError := Log.WriteString(errStr); writeError != nil {
+			panic(writeError)
+		}
+	} else {
+		panic(e)
+	}
+	return false
 }
 
 type test interface {
