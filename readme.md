@@ -29,16 +29,30 @@ alias gt="clear && color go test"
   useData(data)
 ```
 
-### Warn
-Warn uses err.Log. By default err.Log will be os.Stderr. Warn will write the error string to err.Log and continue. If err.Log is set nil, warn will panic. Warn also returns an "OK" boolean. There are several ways to use warn, but the most effective is as part of an if. Also, if the error does not end in a newline, Warn adds a new line.
+### Warn and Log
+Warn and Log are very similar. The difference is how the developer intends to handle the error in production. During development, Warn and Log will behave identically, they take a possible error and return OK (true if nil, false if error). If err.Out is not nil, they will write to err.Out.
+
+The difference is what they do when err.Out is nil. In this case, Warn will panic and Log will do nothing. Use Warn for errors that will not be handled at production and Log for errors that will be handled at production.
 
 ```go
   if data,e := SomeFunc(); err.Warn(e){
     useData(data)
+  }
+
+  if data,e := SomeFunc(); err.Log(e){
+    useData(data)
   } else {
     handleError(e)
   }
-  // similar to (but better than!!!)
+
+  // same as
+  if data,e := SomeFunc(); e == nil{
+    useData(data)
+  } else {
+    fmt.Println(e) //for debug only, remove before release
+    // panic(e) <-- this is for production
+  }
+
   if data,e := SomeFunc(); e == nil{
     useData(data)
   } else {
@@ -47,13 +61,13 @@ Warn uses err.Log. By default err.Log will be os.Stderr. Warn will write the err
   }
 ```
 
-It is worth noting that err.Log is a simple interface:
+It is worth noting that err.Out is a simple interface:
 ```go
 type stringWriter interface {
   WriteString(string) (int, error)
 }
 
-var Log = stringWriter(os.Stderr)
+var Out = stringWriter(os.Stderr)
 ```
 Both *os.File and bufio.Writer implement this interface, and it's easy to match.
 

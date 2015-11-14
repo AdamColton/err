@@ -12,10 +12,10 @@ type stringWriter interface {
 	WriteString(string) (int, error)
 }
 
-// Log is the location Warn will write to. The stringWriter interface implements
+// Out is the location Warn will write to. The stringWriter interface implements
 // WriteString(string) (int, error)
 // and is satisfied by *os.File and bufio.Writer
-var Log = stringWriter(os.Stderr)
+var Out = stringWriter(os.Stderr)
 
 // Panic takes a possible error e and if it is not nil panics
 func Panic(e error) {
@@ -25,22 +25,39 @@ func Panic(e error) {
 }
 
 // Warn takes a possible error e and returns a bool indicating e != nil.
-// If Log is nil and e is not nil, Warn will call panic(e).
-// If Log is not and e is not nil, Warn will write e to Log.
+// If e is nil, Warn will return true
+// If Out is not nil and e is not nil, Warn will write e to Out and return false
+// If Out is nil and e is not nil, Warn will call panic(e).
 func Warn(e error) bool {
-	if e == nil {
+	ok := (e == nil)
+	if !ok && toOut(e) {
+		panic(e)
+	}
+	return ok
+}
+
+// Log takes a possible error e and returns a bool indicating e != nil.
+// If e is nil, Log will return true
+// If Out is not nil and e is not nil, Log will write e to Out and return false
+// If Out is nil and e is not nil, Log will return false
+func Log(e error) bool {
+	ok := (e == nil)
+	if !ok {
+		toOut(e)
+	}
+	return ok
+}
+
+func toOut(e error) bool {
+	if Out == nil {
 		return true
 	}
-	if Log != nil {
-		errStr := e.Error()
-		if errStr[len(errStr)-1:] != "\n" {
-			errStr += "\n"
-		}
-		if _, writeError := Log.WriteString(errStr); writeError != nil {
-			panic(writeError)
-		}
-	} else {
-		panic(e)
+	errStr := e.Error()
+	if errStr[len(errStr)-1:] != "\n" {
+		errStr += "\n"
+	}
+	if _, writeError := Out.WriteString(errStr); writeError != nil {
+		panic(writeError)
 	}
 	return false
 }

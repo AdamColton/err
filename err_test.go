@@ -42,35 +42,60 @@ func (mock *mocker) Error(i ...interface{}) {
 
 func TestWarnNotNil(t *testing.T) {
 	mock := &mocker{}
-	restore := Log
-	Log = mock
+	restore := Out
+	Out = mock
 	Warn(testError("TestWarnNotNil"))
 	if mock.buf != "TestWarnNotNil\n" {
 		t.Error("Expected TestWarnNotNil, Got: " + mock.buf)
 	}
-	Log = restore
+	Out = restore
 }
 
 func TestWarnNil(t *testing.T) {
-	restore := Log
+	restore := Out
 	defer func() {
+		Out = restore
 		switch recover().(type) {
 		case testError:
-			Log = restore
 			return //as expected
 		default:
-			Log = restore
 			t.Error("Expected testError")
 		}
 	}()
-	Log = nil
+	Out = nil
 	Warn(testError("TestWarnNil"))
+}
+
+func TestLogNotNil(t *testing.T) {
+	mock := &mocker{}
+	restore := Out
+	Out = mock
+	Log(testError("TestWarnNotNil"))
+	if mock.buf != "TestWarnNotNil\n" {
+		t.Error("Expected TestWarnNotNil, Got: " + mock.buf)
+	}
+	Out = restore
+}
+
+func TestLogNil(t *testing.T) {
+	restore := Out
+	defer func() {
+		Out = restore
+		switch recover().(type) {
+		case testError:
+			t.Error("Should not have panicked")
+		default:
+			return //as expected
+		}
+	}()
+	Out = nil
+	Log(testError("TestWarnNil"))
 }
 
 func TestTest(t *testing.T) {
 	mockTest := &mocker{}
 	Test(testError("TestTest"), mockTest)
 	if mockTest.buf != "TestTest" {
-		t.Error("Exptected TestTest")
+		t.Error("Expected TestTest")
 	}
 }
