@@ -6,6 +6,7 @@ package err
 import (
 	"fmt"
 	"os"
+	"runtime"
 )
 
 type stringWriter interface {
@@ -47,6 +48,10 @@ func Log(e error) bool {
 	}
 	return ok
 }
+
+// Check takes a possible error e and returns a bool indicating e != nil.
+// Same behavior as Log, but with no logging
+func Check(e error) bool { return e == nil }
 
 func toOut(e error) bool {
 	if Out == nil {
@@ -100,4 +105,25 @@ func Todo(todo ...interface{}) {
 // code
 func Depricated(depricated ...interface{}) {
 	Issue(append([]interface{}{"Depricated: "}, depricated...))
+}
+
+var DebugEnabled = false
+
+// Debug is for printing debug information. It will automatically prepend the
+// file name and line. It will print to stdOut, not err.Out By default it is
+// disabled, setting DebugEnabled to true will enable it.
+func Debug(p ...interface{}) {
+	if !DebugEnabled {
+		return
+	}
+	if _, file, line, ok := runtime.Caller(0); ok {
+		for i := len(file) - 1; i >= 0; i-- {
+			if file[i] == '/' {
+				file = file[i+1:]
+				break
+			}
+		}
+		fmt.Print(file, ":", line, ": ")
+	}
+	fmt.Println(p...)
 }
