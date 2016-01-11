@@ -1,5 +1,8 @@
 ## Err
-This is what I use for error handling in Go. It's similar to many other libraries and there are probably better ones out there. Never the less, I thought I would share (also, pushing to github makes it even easier for me to import to my own projects!).
+This is what I use for error handling in Go. It's similar to many other
+libraries and there are probably better ones out there. Never the less, I
+thought I would share (also, pushing to github makes it even easier for me to
+import to my own projects!).
 
 I have my terminal setup to color stderr, which helps a lot. This is in my .bashrc:
 ```bash
@@ -23,16 +26,24 @@ alias gt="clear && color go test"
   useData(data)
   // same as
   data, e := SomeFunc()
-  if e!=nil {
+  if e != nil {
     panic(e)
   }
   useData(data)
 ```
 
 ### Warn and Log
-Warn and Log are very similar. The difference is how the developer intends to handle the error in production. During development, Warn and Log will behave identically, they take a possible error and return OK (true if nil, false if error). If err.Out is not nil, they will write to err.Out.
+Warn and Log are very similar. The difference is how the developer intends to
+handle the error in production. During development, Warn and Log will behave
+identically, they take a possible error and return OK (true if nil, false if
+error). If err.Out is not nil, they will write to err.Out.
 
-The difference is what they do when err.Out is nil. In this case, Warn will panic and Log will do nothing. Use Warn for errors that will not be handled at production and Log for errors that will be handled at production.
+The difference is what they do when PanicOnWarn is true. In this case, Warn will
+panic. Use Warn for errors that will not be handled at production and Log for
+errors that will be handled (or intentionally ignored) at production.
+
+For production, it is recommended to set PanicOnWarn to true and err.Out to a
+file. By default, err.Out is set to stderr.
 
 ```go
   if data,e := SomeFunc(); err.Warn(e){
@@ -89,7 +100,8 @@ Issue will issue and error to Warn.
   err.Issue("This call is to slow to release")
   callSlowFunction()
 ```
-Todo and Depricated are wrappers for Issue that add "Todo: " or "Depricated: " and serve to make using documentation errors a little cleaner.
+Todo and Depricated are wrappers for Issue that add "Todo: " or "Depricated: "
+and serve to make using documentation errors a little cleaner.
 
 ```go
   func oldFoo(){
@@ -98,5 +110,36 @@ Todo and Depricated are wrappers for Issue that add "Todo: " or "Depricated: " a
 
   func newFoo(){
     err.Todo("finish newFoo")
+  }
+```
+
+### Debug
+Debug is similar to fmt.Println, actually, it's a wrapper around it. Only if
+err.DebugEnabled is true will Debug print the values passed in. It will also
+print the filename and line number if err.DebugShowFile is true. By default,
+DebugEnabled is false and DebugShowFile is true.
+
+During debugging, it can be useful to toggle DebugEnabled on and off so that you
+can see output from sections of code that are under investigation, but supress
+the same output statements when invoked from sections of code that are not of
+interest.
+
+```go
+  func foo(){
+    bar(20)
+    reset := err.DebugEnabled
+    err.DebugEnabled = true
+    bar(10)
+    err.DebugEnabled = reset
+  }
+
+  func bar(x float64) float64{
+    s := float64(0)
+    for i := float64(0); i<15; i++{
+      y := math.Sqrt(x-i)
+      err.Debug(x-i,y)
+      s += y
+    }
+    return s
   }
 ```

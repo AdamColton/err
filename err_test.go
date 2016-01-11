@@ -40,21 +40,23 @@ func (mock *mocker) Error(i ...interface{}) {
 	}
 }
 
-func TestWarnNotNil(t *testing.T) {
+func TestWarnNotPanic(t *testing.T) {
 	mock := &mocker{}
 	restore := Out
 	Out = mock
-	Warn(testError("TestWarnNotNil"))
-	if mock.buf != "TestWarnNotNil\n" {
-		t.Error("Expected TestWarnNotNil, Got: " + mock.buf)
+	Warn(testError("TestWarnNotPanic"))
+	if l := len(mock.buf); l < 17 || mock.buf[l-17:] != "TestWarnNotPanic\n" {
+		t.Error("Expected string ending with 'TestWarnNotPanic', Got: '" + mock.buf + "'")
 	}
 	Out = restore
 }
 
-func TestWarnNil(t *testing.T) {
-	restore := Out
+func TestWarnPanic(t *testing.T) {
+	restoreOut := Out
+	restorePanic := PanicOnWarn
 	defer func() {
-		Out = restore
+		Out = restoreOut
+		PanicOnWarn = restorePanic
 		switch recover().(type) {
 		case testError:
 			return //as expected
@@ -63,16 +65,17 @@ func TestWarnNil(t *testing.T) {
 		}
 	}()
 	Out = nil
+	PanicOnWarn = true
 	Warn(testError("TestWarnNil"))
 }
 
-func TestLogNotNil(t *testing.T) {
+func TestLog_OutNotNil(t *testing.T) {
 	mock := &mocker{}
 	restore := Out
 	Out = mock
-	Log(testError("TestWarnNotNil"))
-	if mock.buf != "TestWarnNotNil\n" {
-		t.Error("Expected TestWarnNotNil, Got: " + mock.buf)
+	Log(testError("TestLog_OutNotNil"))
+	if l := len(mock.buf); l < 18 || mock.buf[l-18:] != "TestLog_OutNotNil\n" {
+		t.Error("Expected ending with 'TestLog_OutNotNil', Got: '" + mock.buf + "'")
 	}
 	Out = restore
 }

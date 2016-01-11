@@ -17,6 +17,7 @@ type stringWriter interface {
 // WriteString(string) (int, error)
 // and is satisfied by *os.File and bufio.Writer
 var Out = stringWriter(os.Stderr)
+var PanicOnWarn = false
 
 // Panic takes a possible error e and if it is not nil panics
 func Panic(e error) {
@@ -27,12 +28,16 @@ func Panic(e error) {
 
 // Warn takes a possible error e and returns a bool indicating e != nil.
 // If e is nil, Warn will return true
-// If Out is not nil and e is not nil, Warn will write e to Out and return false
-// If Out is nil and e is not nil, Warn will call panic(e).
+// If PanicOnWarn is true and e is not nil, Warn call panic(e).
+// If PanicOnWarn is true and e is not nil, Warn will log e
 func Warn(e error) bool {
 	ok := (e == nil)
-	if !ok && toOut(e) {
-		panic(e)
+	if !ok {
+		if PanicOnWarn {
+			panic(e)
+		} else {
+			toOut(e)
+		}
 	}
 	return ok
 }
@@ -53,18 +58,20 @@ func Log(e error) bool {
 // Same behavior as Log, but with no logging
 func Check(e error) bool { return e == nil }
 
-func toOut(e error) bool {
+// toOut takes an error and attempts to write it to Out
+// if Out is set to nil, false is returned indicating failure
+func toOut(e error) {
 	if Out == nil {
-		return true
+		return
 	}
-	errStr := e.Error()
+	errStr := getCallerAndLine(2)
+	errStr += e.Error()
 	if errStr[len(errStr)-1:] != "\n" {
 		errStr += "\n"
 	}
 	if _, writeError := Out.WriteString(errStr); writeError != nil {
 		panic(writeError)
 	}
-	return false
 }
 
 type test interface {
@@ -108,6 +115,7 @@ func Depricated(depricated ...interface{}) {
 }
 
 var DebugEnabled = false
+var DebugShowFile = true
 
 // Debug is for printing debug information. It will automatically prepend the
 // file name and line. It will print to stdOut, not err.Out By default it is
@@ -116,14 +124,21 @@ func Debug(p ...interface{}) {
 	if !DebugEnabled {
 		return
 	}
-	if _, file, line, ok := runtime.Caller(0); ok {
+	if DebugShowFile {
+		fmt.Print(getCallerAndLine(1))
+	}
+	fmt.Println(p...)
+}
+
+func getCallerAndLine(i int) string {
+	if _, file, line, ok := runtime.Caller(i + 1); ok {
 		for i := len(file) - 1; i >= 0; i-- {
 			if file[i] == '/' {
 				file = file[i+1:]
 				break
 			}
 		}
-		fmt.Print(file, ":", line, ": ")
+		return fmt.Sprint(file, ":", line, ": ")
 	}
-	fmt.Println(p...)
+	return ""
 }
