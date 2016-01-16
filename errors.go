@@ -13,6 +13,9 @@ type stringWriter interface {
 	WriteString(string) (int, error)
 }
 
+var Stderr = os.Stderr
+var Stdout = os.Stdout
+
 // ErrOut is the location Warn will write to. The stringWriter interface implements
 // WriteString(string) (int, error)
 // and is satisfied by *os.File and bufio.Writer

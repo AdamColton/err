@@ -2,13 +2,12 @@ package err
 
 import (
 	"fmt"
-	"os"
 )
 
-// ErrOut is the location Warn will write to. The stringWriter interface implements
+// DebugOut is the location Warn will write to. The stringWriter interface implements
 // WriteString(string) (int, error)
 // and is satisfied by *os.File and bufio.Writer
-var DebugOut stringWriter = os.Stdout
+var DebugOut stringWriter = nil
 
 // DebugShowFile, when true, will preced any debug output with the file and line
 // of the caller.

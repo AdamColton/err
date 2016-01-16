@@ -5,7 +5,7 @@ with the transition from development to production code.
 This library has 3 main sections error handling, documentation errors and
 debugging output.
 
-Error provides three main functions Log, Panic and Warn. Warn being a special
+Error has three core functions Log, Panic and Warn. Warn being a special
 case that can be switched to behave like either Log or Panic. The idea being
 that during development, we optimistically attempt to continue, but when we're
 doing release testing or we've released, we can panic on unrecoverable errors.
@@ -133,10 +133,9 @@ interest.
 ```go
   func foo(){
     bar(20)
-    reset := err.DebugEnabled
-    err.DebugEnabled = true
+    err.DebugOut = err.Stdout
     bar(10)
-    err.DebugEnabled = reset
+    err.DebugOut = nil
   }
 
   func bar(x float64) float64{
