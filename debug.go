@@ -18,16 +18,16 @@ var DebugShowFile = true
 // file name and line. It will print to stdOut, not err.Out By default it is
 // disabled, setting DebugEnabled to true will enable it.
 func Debug(p ...interface{}) {
-	if DebugOut != nil {
+	if DebugOut == nil {
 		return
 	}
 
 	if DebugShowFile {
-		if _, writeError := ErrOut.WriteString(getCallerAndLine(1)); writeError != nil {
+		if _, writeError := DebugOut.WriteString(getCallerAndLine(1)); writeError != nil {
 			panic(writeError)
 		}
 	}
-	if _, writeError := ErrOut.WriteString(fmt.Sprintln(p...)); writeError != nil {
+	if _, writeError := DebugOut.WriteString(fmt.Sprintln(p...)); writeError != nil {
 		panic(writeError)
 	}
 }
