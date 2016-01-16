@@ -13,11 +13,10 @@ type stringWriter interface {
 	WriteString(string) (int, error)
 }
 
-// Out is the location Warn will write to. The stringWriter interface implements
+// ErrOut is the location Warn will write to. The stringWriter interface implements
 // WriteString(string) (int, error)
 // and is satisfied by *os.File and bufio.Writer
-var Out = stringWriter(os.Stderr)
-var PanicOnWarn = false
+var ErrOut stringWriter = os.Stderr
 
 // Panic takes a possible error e and if it is not nil panics
 func Panic(e error) {
@@ -25,6 +24,10 @@ func Panic(e error) {
 		panic(e)
 	}
 }
+
+// PanicOnWarn determines the behavior of err.Warn allowing it toggle between
+// behaving like err.Log (during development) and err.Panic (when live).
+var PanicOnWarn = false
 
 // Warn takes a possible error e and returns a bool indicating e != nil.
 // If e is nil, Warn will return true
@@ -36,7 +39,7 @@ func Warn(e error) bool {
 		if PanicOnWarn {
 			panic(e)
 		} else {
-			toOut(e)
+			toErrOut(e)
 		}
 	}
 	return ok
@@ -44,12 +47,12 @@ func Warn(e error) bool {
 
 // Log takes a possible error e and returns a bool indicating e != nil.
 // If e is nil, Log will return true
-// If Out is not nil and e is not nil, Log will write e to Out and return false
-// If Out is nil and e is not nil, Log will return false
+// If ErrOut is not nil and e is not nil, Log will write e to ErrOut and return false
+// If ErrOut is nil and e is not nil, Log will return false
 func Log(e error) bool {
 	ok := (e == nil)
 	if !ok {
-		toOut(e)
+		toErrOut(e)
 	}
 	return ok
 }
@@ -58,10 +61,10 @@ func Log(e error) bool {
 // Same behavior as Log, but with no logging
 func Check(e error) bool { return e == nil }
 
-// toOut takes an error and attempts to write it to Out
-// if Out is set to nil, false is returned indicating failure
-func toOut(e error) {
-	if Out == nil {
+// toErrOut takes an error and attempts to write it to ErrOut
+// if ErrOut is set to nil, false is returned indicating failure
+func toErrOut(e error) {
+	if ErrOut == nil {
 		return
 	}
 	errStr := getCallerAndLine(2)
@@ -69,7 +72,7 @@ func toOut(e error) {
 	if errStr[len(errStr)-1:] != "\n" {
 		errStr += "\n"
 	}
-	if _, writeError := Out.WriteString(errStr); writeError != nil {
+	if _, writeError := ErrOut.WriteString(errStr); writeError != nil {
 		panic(writeError)
 	}
 }
@@ -87,49 +90,9 @@ func Test(e error, t test) {
 	}
 }
 
-// Documentation errors are used to help documentation the development process
-// and Warn that features are incomplete, depreciated or any other information
-// relevent to active development of current features.
-type DocumentationError string
-
-// Error method implements the error interface
-func (e DocumentationError) Error() string { return string(e) }
-
-// Issue takes any number of arguments (though generally, one string) and
-// concats them to a DocumentationError which is passed to Warn.
-// This is useful in documenting sections of code under current development that
-// are not ready for release.
-func Issue(issue ...interface{}) {
-	Warn(DocumentationError(fmt.Sprint(issue...)))
-}
-
-// Todo is a wrapper around Issue to specifically call out incomplete items
-func Todo(todo ...interface{}) {
-	Issue(append([]interface{}{"TODO: "}, todo...))
-}
-
-// Depricated is a wrapper around Issue to specifically call out depricated
-// code
-func Depricated(depricated ...interface{}) {
-	Issue(append([]interface{}{"Depricated: "}, depricated...))
-}
-
-var DebugEnabled = false
-var DebugShowFile = true
-
-// Debug is for printing debug information. It will automatically prepend the
-// file name and line. It will print to stdOut, not err.Out By default it is
-// disabled, setting DebugEnabled to true will enable it.
-func Debug(p ...interface{}) {
-	if !DebugEnabled {
-		return
-	}
-	if DebugShowFile {
-		fmt.Print(getCallerAndLine(1))
-	}
-	fmt.Println(p...)
-}
-
+// getCallerAndLine attempts to return the file and line number i positions up
+// the call stack. It returns only the file name, not the directory. In the case
+// that it cannot fetch the information, an empty string is returned.
 func getCallerAndLine(i int) string {
 	if _, file, line, ok := runtime.Caller(i + 1); ok {
 		for i := len(file) - 1; i >= 0; i-- {
